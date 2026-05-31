@@ -341,15 +341,7 @@ nav {
   border: 1.5px dashed rgba(160,30,30,0.25);
 }
 
-/* API bar (shared tiny one in new note view) */
-.api-bar {
-  display: flex; align-items: center; gap: 0.5rem;
-  background: var(--midnight-pale); border: 1.5px dashed var(--midnight-dim);
-  border-radius: 8px; padding: 0.5rem 0.85rem;
-  max-width: 340px; align-self: center;
-}
-.api-bar span { font-family: var(--caslon); font-style: italic; font-size: 0.82rem; color: var(--midnight-mid); white-space: nowrap; }
-#api-url { background: transparent; border: none; outline: none; color: var(--midnight); font-family: var(--sans); font-size: 0.75rem; font-weight: 600; flex: 1; }
+
 
 /* ─────────────────────────────────────────────
    VIEW: NOTE DETAIL
@@ -547,11 +539,6 @@ nav {
     <h2 class="new-note-heading">Write something down.</h2>
     <p class="new-note-sub">It will be here when you need it.</p>
 
-    <div class="api-bar">
-      <span>API →</span>
-      <input type="text" id="api-url" value="http://localhost:8000" />
-    </div>
-
     <form id="note-form" autocomplete="off">
       <div class="new-note-field">
         <label class="field-label" for="note-title">Title</label>
@@ -635,7 +622,13 @@ nav {
 </section>
 
 <script>
-  const BASE = () => (document.getElementById('api-url')?.value || 'http://localhost:8000').replace(/\/$/, '');
+  // ── CONFIG ───────────────────────────────────────────────
+  // Change this to your Railway URL before deploying.
+  const CONFIG = {
+    apiUrl: 'http://localhost:8000'
+  };
+
+  const BASE = () => CONFIG.apiUrl;
 
   // ── ROUTING ──────────────────────────────────────────────
   const views   = ['notes','new','detail','search'];
