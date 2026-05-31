@@ -1,5 +1,8 @@
-from dotenv import load_dotenv
-load_dotenv()
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # on Railway, env vars are injected directly — dotenv not needed
 
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import ASCENDING, TEXT, IndexModel
