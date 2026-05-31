@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Distill</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,400;1,600&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Adobe Fonts — paste your kit <link> from fonts.adobe.com here -->
+<!-- <link rel="stylesheet" href="https://use.typekit.net/YOUR-KIT-ID.css"> -->
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --butter:        #FFF2BA;
+  --butter-dark:   #F5E48A;
+  --midnight:      #0F3C65;
+  --midnight-mid:  #1a5490;
+  --midnight-lt:   #2d6fa8;
+  --midnight-pale: rgba(15,60,101,0.06);
+  --midnight-dim:  rgba(15,60,101,0.13);
+  --midnight-dim2: rgba(15,60,101,0.22);
+  --white:         #FFFDF0;
+  --ink:           #0a2d4d;
+  --caslon: 'adobe-caslon-pro', 'Adobe Caslon Pro', Georgia, serif;
+  --serif:  'Cormorant Garamond', Georgia, serif;
+  --sans:   'Nunito', sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--sans);
+  background: var(--butter);
+  background-image:
+    url("data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle fill='%230F3C65' fill-opacity='0.03' cx='16' cy='16' r='1'/%3E%3C/svg%3E");
+  color: var(--midnight);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── NAV ── */
+nav {
+  display: flex;
+  align-items: center;
+  padding: 0 2.5rem;
+  height: 64px;
+  border-bottom: 1.5px dashed var(--midnight-dim);
+  background: var(--butter);
+  position: sticky; top: 0; z-index: 200;
+  gap: 0;
+}
+
+.nav-logo {
+  display: flex; align-items: center; gap: 0.75rem;
+  text-decoration: none; margin-right: 2.5rem;
+}
+.nav-logo-blob {
+  position: relative; width: 36px; height: 36px; flex-shrink: 0;
+}
+.nav-logo-blob svg.blob { position: absolute; inset: 0; animation: wobble 5s ease-in-out infinite; }
+.nav-logo-blob svg.icon { position: absolute; top:50%; left:50%; transform:translate(-50%,-50%); }
+@keyframes wobble {
+  0%,100% { transform: rotate(-2deg) scale(1); }
+  40%      { transform: rotate(2deg) scale(1.04); }
+  70%      { transform: rotate(-1deg) scale(0.97); }
+}
+.nav-logo h1 {
+  font-family: var(--serif);
+  font-size: 1.35rem; font-weight: 700;
+  color: var(--ink); letter-spacing: -0.02em; line-height: 1;
+}
+
+.nav-links { display: flex; align-items: center; gap: 0.25rem; }
+.nav-link {
+  font-family: var(--caslon);
+  font-style: italic;
+  font-size: 0.92rem;
+  color: var(--midnight-mid);
+  text-decoration: none;
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  transition: background 0.15s, color 0.15s;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+}
+.nav-link:hover  { background: var(--midnight-pale); color: var(--ink); }
+.nav-link.active {
+  background: var(--midnight);
+  color: var(--butter);
+  border-color: var(--midnight);
+}
+
+.nav-right { margin-left: auto; display: flex; align-items: center; gap: 0.75rem; }
+#note-count-badge {
+  background: var(--midnight);
+  color: var(--butter);
+  border-radius: 20px;
+  padding: 3px 13px;
+  font-family: var(--caslon);
+  font-style: italic;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+/* ── VIEWS ── */
+.view { display: none; flex: 1; }
+.view.active { display: flex; flex-direction: column; }
+
+/* ─────────────────────────────────────────────
+   VIEW: NOTES LIST
+───────────────────────────────────────────── */
+#view-notes { padding: 2.5rem; gap: 0; }
+
+.notes-toolbar {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+.notes-toolbar h2 {
+  font-family: var(--serif);
+  font-style: italic; font-size: 1.2rem; font-weight: 600;
+  color: var(--ink);
+}
+.btn-refresh {
+  background: var(--white);
+  border: 1.5px solid var(--midnight-dim);
+  color: var(--midnight-mid);
+  border-radius: 8px;
+  padding: 0.45rem 0.9rem;
+  font-family: var(--sans); font-size: 0.78rem; font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex; align-items: center; gap: 0.4rem;
+  box-shadow: 2px 2px 0 var(--midnight-dim);
+}
+.btn-refresh:hover {
+  background: var(--butter-dark); color: var(--midnight);
+  transform: translate(-1px,-1px); box-shadow: 3px 3px 0 var(--midnight-dim);
+}
+.btn-refresh svg { width: 13px; height: 13px; transition: transform 0.5s; }
+.btn-refresh.spinning svg { transform: rotate(360deg); }
+
+#notes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 1.4rem;
+  align-content: start;
+}
+
+/* ── NOTE CARD ── */
+.note-card {
+  background: var(--white);
+  border: 1.5px solid var(--midnight-dim);
+  border-radius: 14px;
+  padding: 1.35rem 1.5rem;
+  display: flex; flex-direction: column; gap: 0.8rem;
+  cursor: pointer;
+  transition: transform 0.18s, box-shadow 0.18s;
+  animation: cardIn 0.38s cubic-bezier(0.34,1.4,0.64,1) both;
+  box-shadow: 3px 3px 0 var(--midnight-dim);
+  position: relative; overflow: hidden;
+}
+.note-card:nth-child(odd)  { transform: rotate(-0.35deg); }
+.note-card:nth-child(even) { transform: rotate(0.3deg); }
+.note-card:hover {
+  transform: rotate(0deg) translateY(-4px) !important;
+  box-shadow: 5px 5px 0 var(--midnight-dim2);
+}
+.note-card::after {
+  content: '';
+  position: absolute; top: 0; right: 0;
+  border-style: solid;
+  border-width: 0 20px 20px 0;
+  border-color: transparent var(--butter) transparent transparent;
+  border-radius: 0 14px 0 0;
+}
+@keyframes cardIn {
+  from { opacity: 0; transform: scale(0.9) rotate(-1deg); }
+  to   { opacity: 1; }
+}
+
+.card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; }
+.note-id {
+  font-family: var(--caslon); font-style: italic;
+  font-size: 0.78rem; color: var(--midnight-lt); opacity: 0.7; flex-shrink: 0;
+}
+.note-title {
+  font-family: var(--serif);
+  font-size: 1.1rem; font-weight: 700; color: var(--ink);
+  line-height: 1.3; letter-spacing: -0.01em;
+}
+.note-snippet {
+  font-size: 0.82rem; color: rgba(15,60,101,0.6); line-height: 1.65;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.card-divider { border: none; border-top: 1.5px dashed var(--midnight-dim); }
+
+.card-ai {
+  font-family: var(--caslon); font-style: italic;
+  font-size: 0.8rem; color: var(--midnight-mid); line-height: 1.55;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.card-ai.thinking { opacity: 0.5; }
+
+.card-tags { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.tag {
+  background: var(--butter-dark);
+  color: var(--midnight);
+  border: 1px solid var(--midnight-dim);
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-family: var(--caslon); font-style: italic;
+  font-size: 0.78rem; font-weight: 600; letter-spacing: 0.03em;
+  cursor: pointer; transition: background 0.12s;
+}
+.tag:hover { background: var(--midnight); color: var(--butter); }
+
+.card-read-more {
+  font-family: var(--caslon); font-style: italic;
+  font-size: 0.78rem; color: var(--midnight-lt);
+  align-self: flex-end;
+  opacity: 0; transition: opacity 0.15s;
+}
+.note-card:hover .card-read-more { opacity: 1; }
+
+/* Empty / error states */
+.empty-state {
+  grid-column: 1/-1; text-align: center; padding: 5rem 2rem;
+  display: flex; flex-direction: column; align-items: center; gap: 1rem;
+}
+.empty-doodle { font-size: 3.5rem; animation: float 3s ease-in-out infinite; }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+.empty-state h3 {
+  font-family: var(--serif); font-style: italic;
+  font-size: 1.3rem; font-weight: 700; color: var(--midnight);
+}
+.empty-state p { font-size: 0.82rem; color: var(--midnight-mid); opacity: 0.75; max-width: 260px; }
+
+/* ─────────────────────────────────────────────
+   VIEW: NEW NOTE (full screen)
+───────────────────────────────────────────── */
+#view-new {
+  align-items: center; justify-content: center;
+  padding: 3rem 2rem; min-height: calc(100vh - 64px);
+}
+
+.new-note-wrap {
+  width: 100%; max-width: 680px;
+  display: flex; flex-direction: column; gap: 1.75rem;
+}
+
+.new-note-heading {
+  font-family: var(--serif);
+  font-size: 2.4rem; font-weight: 700; font-style: italic;
+  color: var(--ink); letter-spacing: -0.03em; line-height: 1.1;
+  text-align: center;
+}
+.new-note-sub {
+  font-family: var(--caslon); font-style: italic;
+  font-size: 0.9rem; color: var(--midnight-mid);
+  text-align: center; margin-top: -1rem;
+}
+
+.new-note-field { display: flex; flex-direction: column; gap: 0.5rem; }
+.field-label {
+  font-family: var(--caslon); font-style: italic;
+  font-size: 0.9rem; color: var(--midnight-mid); letter-spacing: 0.02em;
+}
+
+.title-input {
+  background: var(--white);
+  border: none;
+  border-bottom: 2px solid var(--midnight-dim2);
+  border-radius: 0;
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 1.6rem; font-weight: 700;
+  padding: 0.5rem 0;
+  width: 100%; outline: none;
+  transition: border-color 0.2s;
+  letter-spacing: -0.02em;
+}
+.title-input::placeholder { color: rgba(15,60,101,0.25); font-style: italic; }
+.title-input:focus { border-bottom-color: var(--midnight); }
+
+.content-input {
+  background: var(--white);
+  border: 1.5px solid var(--midnight-dim);
+  border-radius: 12px;
+  color: var(--ink);
+  font-family: var(--sans); font-size: 0.92rem; line-height: 1.75;
+  padding: 1.1rem 1.25rem;
+  width: 100%; outline: none; resize: none;
+  min-height: 240px;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.content-input::placeholder { color: rgba(15,60,101,0.3); font-style: italic; }
+.content-input:focus {
+  border-color: var(--midnight-mid);
+  box-shadow: 3px 3px 0 var(--midnight-dim);
+}
+
+.new-note-actions { display: flex; align-items: center; justify-content: flex-end; gap: 1rem; }
+.btn-cancel {
+  background: transparent; border: 1.5px solid var(--midnight-dim);
+  color: var(--midnight-mid); border-radius: 8px;
+  padding: 0.7rem 1.3rem;
+  font-family: var(--caslon); font-style: italic; font-size: 0.9rem;
+  cursor: pointer; transition: all 0.15s;
+}
+.btn-cancel:hover { background: var(--midnight-pale); }
+.btn-save {
+  background: var(--midnight); color: var(--butter);
+  border: none; border-radius: 10px;
+  padding: 0.75rem 2rem;
+  font-family: var(--sans); font-size: 0.9rem; font-weight: 700;
+  cursor: pointer; transition: transform 0.12s, box-shadow 0.12s;
+  box-shadow: 3px 3px 0 var(--midnight-dim2);
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.btn-save:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 var(--midnight-dim2); }
+.btn-save:active { transform: translate(1px,1px); box-shadow: 1px 1px 0 var(--midnight-dim2); }
+.btn-save:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+.form-status {
+  font-family: var(--caslon); font-style: italic;
+  font-size: 0.85rem; padding: 0.65rem 1rem; border-radius: 8px; display: none;
+}
+.form-status.success {
+  display: block;
+  background: rgba(15,60,101,0.07);
+  color: var(--midnight);
+  border: 1.5px dashed var(--midnight-dim);
+}
+.form-status.error {
+  display: block;
+  background: rgba(160,30,30,0.06);
+  color: #7a1c1c;
+  border: 1.5px dashed rgba(160,30,30,0.25);
+}
+
+/* API bar (shared tiny one in new note view) */
+.api-bar {
+  display: flex; align-items: center; gap: 0.5rem;
+  background: var(--midnight-pale); border: 1.5px dashed var(--midnight-dim);
+  border-radius: 8px; padding: 0.5rem 0.85rem;
+  max-width: 340px; align-self: center;
+}
+.api-bar span { font-family: var(--caslon); font-style: italic; font-size: 0.82rem; color: var(--midnight-mid); white-space: nowrap; }
+#api-url { background: transparent; border: none; outline: none; color: var(--midnight); font-family: var(--sans); font-size: 0.75rem; font-weight: 600; flex: 1; }
+
+/* ─────────────────────────────────────────────
+   VIEW: NOTE DETAIL
+───────────────────────────────────────────── */
+#view-detail {
+  padding: 3rem 2.5rem; align-items: center;
+}
+
+.detail-wrap {
+  width: 100%; max-width: 720px;
+  display: flex; flex-direction: column; gap: 0;
+}
+
+.detail-back {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font-family: var(--caslon); font-style: italic; font-size: 0.88rem;
+  color: var(--midnight-mid); cursor: pointer;
+  text-decoration: none; margin-bottom: 2.5rem;
+  transition: color 0.15s;
+}
+.detail-back:hover { color: var(--midnight); }
+.detail-back svg { width: 14px; height: 14px; }
+
+.detail-id {
+  font-family: var(--caslon); font-style: italic;
+  font-size: 0.82rem; color: var(--midnight-lt); opacity: 0.65;
+  margin-bottom: 0.6rem;
+}
+.detail-title {
+  font-family: var(--serif);
+  font-size: 2.6rem; font-weight: 700; color: var(--ink);
+  letter-spacing: -0.03em; line-height: 1.1;
+  margin-bottom: 2rem;
+}
+
+.detail-section-label {
+  font-family: var(--caslon); font-style: italic;
+  font-size: 0.82rem; color: var(--midnight-lt);
+  text-transform: lowercase; letter-spacing: 0.08em;
+  margin-bottom: 0.6rem;
+}
+
+.detail-content {
+  font-size: 1rem; line-height: 1.8; color: var(--ink);
+  white-space: pre-wrap; word-break: break-word;
+  margin-bottom: 2.5rem;
+}
+
+.detail-divider { border: none; border-top: 1.5px dashed var(--midnight-dim); margin-bottom: 2rem; }
+
+.detail-ai-block {
+  background: var(--white);
+  border: 1.5px dashed var(--midnight-dim);
+  border-radius: 14px; padding: 1.5rem 1.75rem;
+  display: flex; flex-direction: column; gap: 0.75rem;
+  margin-bottom: 1.75rem;
+}
+.detail-ai-header {
+  display: flex; align-items: center; gap: 0.6rem;
+}
+.ai-sparkle {
+  font-size: 0.9rem; color: var(--midnight-mid);
+  animation: sparkle 2s ease-in-out infinite;
+}
+@keyframes sparkle {
+  0%,100%{ opacity:1; transform: scale(1) rotate(0deg); }
+  50%     { opacity:0.3; transform: scale(0.7) rotate(15deg); }
+}
+.ai-sparkle.done { animation: none; opacity: 1; }
+.detail-ai-label {
+  font-family: var(--caslon); font-style: italic;
+  font-size: 0.9rem; color: var(--midnight-mid);
+}
+.detail-ai-text {
+  font-size: 0.95rem; line-height: 1.7; color: var(--ink);
+  white-space: pre-wrap;
+}
+.detail-ai-text.thinking {
+  color: var(--midnight-mid); font-style: italic; opacity: 0.65;
+}
+.detail-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+/* ─────────────────────────────────────────────
+   VIEW: SEARCH
+───────────────────────────────────────────── */
+#view-search { padding: 3rem 2.5rem; align-items: center; }
+
+.search-wrap { width: 100%; max-width: 720px; display: flex; flex-direction: column; gap: 2rem; }
+
+.search-heading {
+  font-family: var(--serif);
+  font-size: 2rem; font-weight: 700; font-style: italic;
+  color: var(--ink); letter-spacing: -0.03em; text-align: center;
+}
+
+.search-box-wrap {
+  position: relative;
+}
+.search-icon {
+  position: absolute; left: 1rem; top: 50%; transform: translateY(-50%);
+  color: var(--midnight-lt); pointer-events: none;
+}
+.search-input {
+  width: 100%;
+  background: var(--white);
+  border: 1.5px solid var(--midnight-dim);
+  border-radius: 12px;
+  color: var(--ink); font-family: var(--sans); font-size: 1rem;
+  padding: 0.85rem 1rem 0.85rem 2.75rem;
+  outline: none; transition: border-color 0.18s, box-shadow 0.18s;
+}
+.search-input::placeholder { color: rgba(15,60,101,0.3); font-style: italic; }
+.search-input:focus {
+  border-color: var(--midnight-mid);
+  box-shadow: 3px 3px 0 var(--midnight-dim);
+}
+
+.search-meta {
+  font-family: var(--caslon); font-style: italic;
+  font-size: 0.88rem; color: var(--midnight-mid); text-align: center;
+  min-height: 1.4em;
+}
+
+.tag-cloud { display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center; }
+.tag-cloud-label {
+  font-family: var(--caslon); font-style: italic;
+  font-size: 0.82rem; color: var(--midnight-lt);
+  width: 100%; text-align: center; margin-bottom: 0.25rem;
+}
+
+#search-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 1.25rem;
+}
+
+/* ── SHARED SCROLLBAR ── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--midnight-dim); border-radius: 99px; }
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav>
+  <a class="nav-logo" onclick="navigate('notes')">
+    <div class="nav-logo-blob">
+      <svg class="blob" width="36" height="36" viewBox="0 0 36 36" fill="none">
+        <path d="M18 3C22 3 30 6 32 11C34 16 33 24 29 29C25 34 19 35 13 34C7 33 2 28 1 22C0 16 3 9 8 5C13 1 14 3 18 3Z" fill="#0F3C65"/>
+      </svg>
+      <svg class="icon" width="17" height="17" viewBox="0 0 17 17" fill="none" stroke="#FFF2BA" stroke-width="1.6" stroke-linecap="round">
+        <rect x="1.5" y="1.5" width="14" height="14" rx="2"/>
+        <line x1="4.5" y1="5.5" x2="12.5" y2="5.5"/>
+        <line x1="4.5" y1="8.5" x2="12.5" y2="8.5"/>
+        <line x1="4.5" y1="11.5" x2="9" y2="11.5"/>
+      </svg>
+    </div>
+    <h1>Distill</h1>
+  </a>
+
+  <div class="nav-links">
+    <a class="nav-link active" id="nav-notes"  onclick="navigate('notes')">Notes</a>
+    <a class="nav-link"        id="nav-new"    onclick="navigate('new')">New Note</a>
+    <a class="nav-link"        id="nav-search" onclick="navigate('search')">Search</a>
+  </div>
+
+  <div class="nav-right">
+    <span id="note-count-badge">0 notes</span>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════
+     VIEW: NOTES LIST
+══════════════════════════════════════════ -->
+<section class="view active" id="view-notes">
+  <div class="notes-toolbar">
+    <h2>All notes</h2>
+    <button class="btn-refresh" id="refresh-btn" onclick="loadNotes()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="1 4 1 10 7 10"/>
+        <path d="M3.51 15a9 9 0 1 0 .49-3.79"/>
+      </svg>
+      Refresh
+    </button>
+  </div>
+  <div id="notes-grid"></div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     VIEW: NEW NOTE
+══════════════════════════════════════════ -->
+<section class="view" id="view-new">
+  <div class="new-note-wrap">
+    <h2 class="new-note-heading">Write something down.</h2>
+    <p class="new-note-sub">It will be here when you need it.</p>
+
+    <div class="api-bar">
+      <span>API →</span>
+      <input type="text" id="api-url" value="http://localhost:8000" />
+    </div>
+
+    <form id="note-form" autocomplete="off">
+      <div class="new-note-field">
+        <label class="field-label" for="note-title">Title</label>
+        <input class="title-input" type="text" id="note-title" placeholder="Give it a name…" required />
+      </div>
+      <div class="new-note-field" style="margin-top:1.5rem;">
+        <label class="field-label" for="note-content">Content</label>
+        <textarea class="content-input" id="note-content" placeholder="Write freely…" required></textarea>
+      </div>
+
+      <div id="form-status" class="form-status"></div>
+
+      <div class="new-note-actions" style="margin-top:1.5rem;">
+        <button type="button" class="btn-cancel" onclick="navigate('notes')">Cancel</button>
+        <button type="submit" class="btn-save" id="save-btn">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <line x1="7.5" y1="1" x2="7.5" y2="14"/><line x1="1" y1="7.5" x2="14" y2="7.5"/>
+          </svg>
+          Save Note
+        </button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     VIEW: NOTE DETAIL
+══════════════════════════════════════════ -->
+<section class="view" id="view-detail">
+  <div class="detail-wrap">
+    <a class="detail-back" onclick="navigate('notes')">
+      <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 2 4 7 9 12"/>
+      </svg>
+      Back to notes
+    </a>
+    <div id="detail-id"      class="detail-id"></div>
+    <h2 id="detail-title"   class="detail-title"></h2>
+
+    <div class="detail-section-label">note</div>
+    <div id="detail-content" class="detail-content"></div>
+
+    <hr class="detail-divider">
+
+    <div class="detail-ai-block">
+      <div class="detail-ai-header">
+        <span class="ai-sparkle" id="detail-sparkle">✦</span>
+        <span class="detail-ai-label">Summary</span>
+      </div>
+      <p id="detail-summary" class="detail-ai-text"></p>
+    </div>
+
+    <div class="detail-section-label">tags</div>
+    <div id="detail-tags" class="detail-tags"></div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     VIEW: SEARCH
+══════════════════════════════════════════ -->
+<section class="view" id="view-search">
+  <div class="search-wrap">
+    <h2 class="search-heading">Search your notes.</h2>
+
+    <div class="search-box-wrap">
+      <svg class="search-icon" width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <circle cx="8" cy="8" r="5"/><line x1="12" y1="12" x2="16" y2="16"/>
+      </svg>
+      <input class="search-input" type="text" id="search-input"
+             placeholder="Search by title, tag, or theme…"
+             oninput="onSearch(this.value)" />
+    </div>
+
+    <div class="tag-cloud" id="tag-cloud">
+      <span class="tag-cloud-label">or browse by tag</span>
+    </div>
+
+    <p class="search-meta" id="search-meta"></p>
+    <div id="search-results"></div>
+  </div>
+</section>
+
+<script>
+  const BASE = () => (document.getElementById('api-url')?.value || 'http://localhost:8000').replace(/\/$/, '');
+
+  // ── ROUTING ──────────────────────────────────────────────
+  const views   = ['notes','new','detail','search'];
+  const navIds  = { notes:'nav-notes', new:'nav-new', search:'nav-search' };
+  let currentView = 'notes';
+
+  function navigate(view, data) {
+    views.forEach(v => {
+      document.getElementById(`view-${v}`).classList.toggle('active', v === view);
+    });
+    Object.entries(navIds).forEach(([k,id]) => {
+      document.getElementById(id)?.classList.toggle('active', k === view);
+    });
+    currentView = view;
+
+    if (view === 'notes')  loadNotes();
+    if (view === 'detail' && data) renderDetail(data);
+    if (view === 'search') initSearch();
+  }
+
+  // ── UTILITIES ─────────────────────────────────────────────
+  function esc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function isThinking(summary) {
+    return !summary || summary === 'Thinking…' || summary === 'AI is thinking...';
+  }
+
+  // ── NOTES LIST ────────────────────────────────────────────
+  async function loadNotes() {
+    const grid = document.getElementById('notes-grid');
+    const btn  = document.getElementById('refresh-btn');
+    if (btn) btn.classList.add('spinning');
+
+    try {
+      const res   = await fetch(`${BASE()}/notes`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const notes = await res.json();
+
+      const c = notes.length;
+      document.getElementById('note-count-badge').textContent =
+        c === 0 ? '0 notes' : c === 1 ? '1 note' : `${c} notes`;
+
+      if (c === 0) {
+        grid.innerHTML = `<div class="empty-state">
+          <div class="empty-doodle">📒</div>
+          <h3>No notes yet</h3>
+          <p>Head to New Note and write something down.</p>
+        </div>`;
+        return;
+      }
+
+      grid.innerHTML = notes.slice().reverse().map((n,i) => cardHTML(n,i)).join('');
+
+    } catch(e) {
+      grid.innerHTML = `<div class="empty-state">
+        <div class="empty-doodle">🔌</div>
+        <h3>Can't reach the backend</h3>
+        <p>${esc(e.message)}</p>
+      </div>`;
+    } finally {
+      setTimeout(() => btn?.classList.remove('spinning'), 500);
+    }
+  }
+
+  function cardHTML(note, idx) {
+    const thinking = isThinking(note.summary);
+    const tagsHtml = (note.tags||[]).map(t =>
+      `<span class="tag" onclick="searchTag(event,'${esc(t)}')">${esc(t)}</span>`
+    ).join('');
+
+    return `<article class="note-card" style="animation-delay:${idx*0.055}s"
+        onclick="openNote(${note.id})">
+      <div class="card-top">
+        <h3 class="note-title">${esc(note.title)}</h3>
+        <span class="note-id">#${String(note.id).padStart(3,'0')}</span>
+      </div>
+      <p class="note-snippet">${esc(note.content)}</p>
+      <hr class="card-divider">
+      <p class="card-ai ${thinking?'thinking':''}">${esc(note.summary||'')}</p>
+      ${tagsHtml ? `<div class="card-tags">${tagsHtml}</div>` : ''}
+      <span class="card-read-more">Read full note →</span>
+    </article>`;
+  }
+
+  // ── NOTE DETAIL ───────────────────────────────────────────
+  async function openNote(id) {
+    try {
+      const res  = await fetch(`${BASE()}/notes/${id}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const note = await res.json();
+      navigate('detail', note);
+    } catch(e) {
+      alert(`Couldn't load note: ${e.message}`);
+    }
+  }
+
+  function renderDetail(note) {
+    const thinking = isThinking(note.summary);
+
+    document.getElementById('detail-id').textContent     = `#${String(note.id).padStart(3,'0')}`;
+    document.getElementById('detail-title').textContent  = note.title;
+    document.getElementById('detail-content').textContent= note.content;
+    document.getElementById('detail-summary').textContent= note.summary || '';
+    document.getElementById('detail-summary').className  = `detail-ai-text${thinking?' thinking':''}`;
+
+    const sparkle = document.getElementById('detail-sparkle');
+    sparkle.className = `ai-sparkle${thinking?'':' done'}`;
+
+    const tagsEl = document.getElementById('detail-tags');
+    tagsEl.innerHTML = (note.tags||[]).map(t =>
+      `<span class="tag" onclick="searchTag(event,'${esc(t)}')">${esc(t)}</span>`
+    ).join('') || `<span style="font-family:var(--caslon);font-style:italic;opacity:0.5;font-size:0.82rem;">none yet</span>`;
+  }
+
+  // ── CREATE NOTE ───────────────────────────────────────────
+  document.getElementById('note-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn    = document.getElementById('save-btn');
+    const status = document.getElementById('form-status');
+    const title  = document.getElementById('note-title').value.trim();
+    const content= document.getElementById('note-content').value.trim();
+
+    btn.disabled = true; btn.textContent = 'Saving…';
+    status.className = 'form-status';
+
+    try {
+      const res = await fetch(`${BASE()}/notes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, content })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(()=>({}));
+        throw new Error(err.detail || `HTTP ${res.status}`);
+      }
+      const saved = await res.json();
+      status.textContent = '✓ Saved — AI is working on the summary.';
+      status.className = 'form-status success';
+      document.getElementById('note-title').value   = '';
+      document.getElementById('note-content').value = '';
+      setTimeout(() => { navigate('notes'); pollNote(saved.id); }, 900);
+    } catch(err) {
+      status.textContent = `Error: ${err.message}`;
+      status.className = 'form-status error';
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="7.5" y1="1" x2="7.5" y2="14"/><line x1="1" y1="7.5" x2="14" y2="7.5"/></svg> Save Note`;
+    }
+  });
+
+  // ── SEARCH ────────────────────────────────────────────────
+  let searchTimer = null;
+  let allTags = [];
+
+  async function initSearch() {
+    buildTagCloud();
+    const q = document.getElementById('search-input').value;
+    if (q) runSearch(q); else {
+      document.getElementById('search-results').innerHTML = '';
+      document.getElementById('search-meta').textContent  = '';
+    }
+  }
+
+  async function buildTagCloud() {
+    try {
+      const res   = await fetch(`${BASE()}/notes`);
+      const notes = await res.json();
+      const freq  = {};
+      notes.forEach(n => (n.tags||[]).forEach(t => { freq[t] = (freq[t]||0)+1; }));
+      allTags = Object.entries(freq).sort((a,b)=>b[1]-a[1]).map(e=>e[0]);
+
+      const cloud = document.getElementById('tag-cloud');
+      if (allTags.length === 0) {
+        cloud.innerHTML = `<span class="tag-cloud-label" style="opacity:0.5">no tags yet</span>`;
+        return;
+      }
+      cloud.innerHTML = `<span class="tag-cloud-label">or browse by tag</span>` +
+        allTags.map(t => `<span class="tag" onclick="searchTag(event,'${esc(t)}')">${esc(t)}</span>`).join('');
+    } catch {}
+  }
+
+  function onSearch(val) {
+    clearTimeout(searchTimer);
+    if (!val.trim()) {
+      document.getElementById('search-results').innerHTML = '';
+      document.getElementById('search-meta').textContent  = '';
+      return;
+    }
+    searchTimer = setTimeout(() => runSearch(val), 280);
+  }
+
+  async function runSearch(q) {
+    const meta = document.getElementById('search-meta');
+    const grid = document.getElementById('search-results');
+    meta.textContent = 'Searching…';
+    try {
+      const res   = await fetch(`${BASE()}/notes/search?q=${encodeURIComponent(q)}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const notes = await res.json();
+
+      meta.textContent = notes.length === 0
+        ? 'No notes matched.'
+        : `${notes.length} note${notes.length>1?'s':''} found for "${q}"`;
+
+      if (notes.length === 0) { grid.innerHTML = ''; return; }
+      grid.innerHTML = notes.map((n,i) => cardHTML(n,i)).join('');
+    } catch(e) {
+      meta.textContent = `Error: ${e.message}`;
+    }
+  }
+
+  function searchTag(event, tag) {
+    event.stopPropagation();
+    navigate('search');
+    setTimeout(() => {
+      const inp = document.getElementById('search-input');
+      inp.value = tag;
+      runSearch(tag);
+    }, 50);
+  }
+
+  // ── TARGETED AI POLL ─────────────────────────────────────
+  // After saving, poll only the new note until its summary arrives.
+  // No full-grid re-renders, no jiggling animations.
+  function pollNote(id, attempts) {
+    attempts = attempts || 0;
+    if (attempts > 20) return; // give up after ~40s
+    setTimeout(async () => {
+      try {
+        const res  = await fetch(`${BASE()}/notes/${id}`);
+        if (!res.ok) return;
+        const note = await res.json();
+        if (isThinking(note.summary)) { pollNote(id, attempts + 1); return; }
+        // Summary is ready — patch the card in place without re-rendering
+        patchCard(note);
+      } catch {}
+    }, 2000);
+  }
+
+  function patchCard(note) {
+    // Update summary text + thinking state on the existing card DOM node
+    const cards = document.querySelectorAll('#notes-grid .note-card');
+    for (const card of cards) {
+      const idEl = card.querySelector('.note-id');
+      if (idEl && idEl.textContent === `#${String(note.id).padStart(3,'0')}`) {
+        const aiEl = card.querySelector('.card-ai');
+        if (aiEl) {
+          aiEl.textContent = note.summary || '';
+          aiEl.classList.remove('thinking');
+        }
+        const tagsEl = card.querySelector('.card-tags');
+        if (tagsEl && note.tags && note.tags.length) {
+          tagsEl.innerHTML = note.tags.map(t =>
+            `<span class="tag" onclick="searchTag(event,'${esc(t)}')">${esc(t)}</span>`
+          ).join('');
+        }
+        break;
+      }
+    }
+  }
+
+  // ── INIT ──────────────────────────────────────────────────
+  loadNotes();
+</script>
+</body>
+</html>
