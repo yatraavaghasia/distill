@@ -1,100 +1,79 @@
-# 🚀 Smart Notes API
+# Distill
 
-A modern, fast, and asynchronous Python backend built with **FastAPI**. This application maps classic CRUD principles over from the MERN stack and leverages a local **Ollama** LLM instance via background tasks to automatically summarize notes and generate contextual tags.
+> *You think. Distill remembers.*
 
----
+A personal knowledge archive that requires nothing from you except writing.
+Capture a note in seconds — the AI summarises it, tags it, and makes it
+searchable by meaning, not just exact words.
 
-## 🛠️ Tech Stack
-* **Framework:** FastAPI
-* **Server Runner:** Uvicorn (ASGI)
-* **Data Validation:** Pydantic
-* **HTTP Client:** HTTPX (for non-blocking AI API calls)
-* **AI Layer:** Local Ollama instance (Running `llama3`)
+## What it does
 
----
+- **Write freely** — no folders, no manual tags, no upfront structure
+- **AI summarises automatically** — every note gets a one-sentence distillation
+  in the background via Groq
+- **Search by meaning** — find notes by theme or tag, even if you never used
+  that word when you wrote them
 
-## 📂 Project Architecture
-```text
-smart-notes/            # Root Git repository
-├── backend/            # FastAPI application
-│   ├── main.py         # App entry point, schemas, and routes
-│   ├── requirements.txt# Python package dependencies
-│   └── venv/           # Isolated virtual environment (ignored by Git)
-└── .gitignore          # Git exclusion rules
+## Stack
 
+| Layer | Technology |
+|---|---|
+| Frontend | Vanilla HTML/CSS/JS |
+| Backend | FastAPI + Python |
+| AI | Groq API (llama-3.3-70b) |
+| Database | MongoDB Atlas |
+| Deploy | Vercel + Railway |
+
+## Running locally
+
+**1. Clone the repo**
+```bash
+git clone https://github.com/yourusername/distill.git
+cd distill
 ```
 
----
-
-## 🚀 Getting Started (Backend Setup)
-
-Follow these steps to get your local development environment up and running.
-
-### 1. Navigate to the Backend Folder
-
-Open your terminal, ensure you are in the project root directory, and move into the backend subdirectory:
-
+**2. Set up the backend**
 ```bash
 cd backend
-
-```
-
-### 2. Create and Activate the Virtual Environment
-
-Isolate your Python dependencies locally (similar to standard `node_modules` scoping):
-
-```bash
-# Create the environment
 python3 -m venv venv
-
-# Activate the environment (macOS/Linux)
 source venv/bin/activate
-
-```
-
-*Note: Your terminal prompt should now be prefixed with `(venv)`.*
-
-### 3. Install Dependencies
-
-Install all the required Python packages specified in the requirements file:
-
-```bash
 pip install -r requirements.txt
-
 ```
 
-### 4. Start the Development Server
+**3. Add your credentials**
+```bash
+cp .env.example .env
+# then edit .env and fill in your values
+```
 
-Launch the application using Uvicorn with hot-reloading enabled (similar to `nodemon` in Node.js):
-
+**4. Start the server**
 ```bash
 uvicorn main:app --reload
-
 ```
 
-The server will boot up locally at **`http://127.0.0.1:8000`**.
-
----
-
-## 🦙 Setting up the AI Layer (Ollama)
-
-To prevent connection timeout errors and allow your background tasks to process text successfully, ensure Ollama is correctly running on your machine:
-
-1. **Launch the Ollama App:** Ensure the Ollama application is active in your macOS menu bar.
-2. **Pull the Model:** Open a separate terminal window and verify you have the correct model downloaded locally:
+**5. Open the frontend**
 ```bash
-ollama run llama3
-
+cd ..
+open index.html
 ```
 
+## Environment variables
 
-3. **Verify Connection:** Open your browser and navigate to `http://localhost:11434/`. You should see the message: `"Ollama is running"`.
+| Variable | Description |
+|---|---|
+| `MONGO_URI` | MongoDB Atlas connection string |
+| `GROQ_API_KEY` | Groq API key (in main.py) |
 
----
+## Live
 
-## 🔌 API Testing & Interactive Documentation
+| | URL |
+|---|---|
+| Frontend | https://distill-sigma.vercel.app |
+| Backend | https://distill-production-5346.up.railway.app |
 
-FastAPI automatically evaluates your code routers and schemas to generate self-documenting interactive environments. Once your server is running, you can open the following links in your browser to test your endpoints:
+## Deploying
 
-* **Swagger UI Docs:** [http://127.0.0.1:8000/docs](https://www.google.com/search?q=http://127.0.0.1:8000/docs) *(Recommended for executing manual POST and GET requests directly from the browser)*
-* **ReDoc UI Docs:** [http://127.0.0.1:8000/redoc](https://www.google.com/search?q=http://127.0.0.1:8000/redoc)
+- **Frontend** → Vercel (import repo, zero config)
+- **Backend** → Railway (set `MONGO_URI` env var, start command: `uvicorn main:app --host 0.0.0.0 --port $PORT`)
+
+See [PRODUCT.md](./PRODUCT.md) for the full product thinking behind Distill.
